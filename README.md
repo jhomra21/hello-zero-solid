@@ -4,8 +4,9 @@
 git clone https://github.com/rocicorp/hello-zero-solid.git
 cd hello-zero-solid
 bun i
-// Not needed if using supabase, no docker set up
-// bun run dev:db-up
+
+# This project uses supabase instead of a docker postgres setup, the db:up command is not needed
+# bun run dev:db-up
 
 # in a second terminal
 bun run dev:zero-cache
