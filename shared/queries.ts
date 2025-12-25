@@ -132,4 +132,20 @@ export const queries = defineQueries({
           .one()
     ),
   },
+
+  // ============================================
+  // Multiplayer Canvas Queries
+  // ============================================
+  canvasSquare: {
+    // Get all squares for a canvas with owner and dragger info
+    forCanvas: defineQuery(
+      z.object({ canvasId: z.string() }),
+      ({ args: { canvasId } }) =>
+        zql.canvas_square
+          .where("canvasId", canvasId)
+          .related("owner", (q) => q.one())
+          .related("dragger", (q) => q.one())
+          .orderBy("createdAt", "asc")
+    ),
+  },
 });

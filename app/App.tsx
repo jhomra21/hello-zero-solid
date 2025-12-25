@@ -10,10 +10,12 @@ import { Status } from "./Status";
 import { TrueCollaborativeInput } from "./TrueCollaborativeInput";
 import { CollaborativeInput } from "./CollaborativeInput";
 import { CollaborativeEditor } from "./CollaborativeEditor";
+import { MultiplayerCanvas } from "./MultiplayerCanvas";
 
 // Document IDs
 const COLLAB_DOC_ID = "test-doc-1"; // For contribution-based collab
 const SHARED_DOC_ID = "shared-doc-1"; // For true shared editing
+const CANVAS_ID = "main-canvas"; // For multiplayer canvas
 
 type ViewMode = "messages" | "collab" | "dev";
 
@@ -170,6 +172,7 @@ function App() {
       {/* True Collaborative Input (Production) */}
       <Show when={viewMode() === "collab"}>
         <TrueCollaborativeInput documentId={SHARED_DOC_ID} />
+        <MultiplayerCanvas canvasId={CANVAS_ID} />
       </Show>
 
       {/* Dev View - Detailed Editor */}

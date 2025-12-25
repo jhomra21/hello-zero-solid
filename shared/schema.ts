@@ -148,6 +148,38 @@ const sharedDocumentRelationships = relationships(
   })
 );
 
+// ============================================
+// Multiplayer Canvas Tables
+// ============================================
+
+const canvasSquare = table("canvas_square")
+  .columns({
+    id: string(),
+    canvasId: string().from("canvas_id"),
+    ownerID: string().from("owner_id"),
+    x: number(),
+    y: number(),
+    width: number(),
+    height: number(),
+    color: string(),
+    draggedBy: string().from("dragged_by").optional(),
+    createdAt: number().from("created_at"),
+  })
+  .primaryKey("id");
+
+const canvasSquareRelationships = relationships(canvasSquare, ({ one }) => ({
+  owner: one({
+    sourceField: ["ownerID"],
+    destField: ["id"],
+    destSchema: user,
+  }),
+  dragger: one({
+    sourceField: ["draggedBy"],
+    destField: ["id"],
+    destSchema: user,
+  }),
+}));
+
 export const schema = createSchema({
   tables: [
     user,
@@ -157,6 +189,7 @@ export const schema = createSchema({
     contribution,
     sharedDocument,
     userCursor,
+    canvasSquare,
   ],
   relationships: [
     messageRelationships,
@@ -164,6 +197,7 @@ export const schema = createSchema({
     documentRelationships,
     userCursorRelationships,
     sharedDocumentRelationships,
+    canvasSquareRelationships,
   ],
   enableLegacyMutators: false,
   enableLegacyQueries: false,
@@ -180,6 +214,7 @@ export type CollaborativeDocument = Row<
 export type Contribution = Row<typeof schema.tables.contribution>;
 export type SharedDocument = Row<typeof schema.tables.shared_document>;
 export type UserCursor = Row<typeof schema.tables.user_cursor>;
+export type CanvasSquare = Row<typeof schema.tables.canvas_square>;
 
 export const zql = createBuilder(schema);
 

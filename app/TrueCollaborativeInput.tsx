@@ -1,11 +1,5 @@
 import { useQuery, useZero } from "@rocicorp/zero/solid";
-import {
-  createSignal,
-  createEffect,
-  onCleanup,
-  createMemo,
-  Show,
-} from "solid-js";
+import { createSignal, createEffect, onCleanup, Show } from "solid-js";
 import { queries } from "../shared/queries";
 import { mutators } from "../shared/mutators";
 
@@ -16,19 +10,25 @@ interface Props {
 /**
  * True collaborative input - single shared text that everyone edits.
  * Optimized: Only syncs content after user pauses typing (debounced).
+ * 
+ * SolidJS patterns:
+ * - Uncontrolled input (no value binding) to avoid cursor issues
+ * - Derived functions for cheap computations
+ * - createEffect for DOM side effects
  */
 export function TrueCollaborativeInput(props: Props) {
   const zero = useZero();
 
+  // Ref for uncontrolled textarea
   let textareaRef: HTMLTextAreaElement | undefined;
 
-  // Track content to detect external changes
+  // Track content to detect external changes (non-reactive, intentional)
   let lastKnownContent = "";
 
-  // Local state
+  // Initialization state
   const [initialized, setInitialized] = createSignal(false);
   
-  // Debounce SENDING - only send after user pauses typing
+  // Debounce timer (non-reactive, just a ref)
   let sendContentTimer: number | undefined;
   const SEND_DEBOUNCE_MS = 150;
 
@@ -42,7 +42,11 @@ export function TrueCollaborativeInput(props: Props) {
   // Get users for display
   const [users] = useQuery(queries.user.all);
 
-  // Initialize from server
+  // Derived function for current user name (cheap lookup, no memo needed)
+  const currentUserName = () =>
+    users().find((u) => u.id === zero().userID)?.name || "Anonymous";
+
+  // Initialize from server (side effect - DOM update)
   createEffect(() => {
     const doc = document();
     if (doc && !initialized() && textareaRef) {
@@ -52,7 +56,7 @@ export function TrueCollaborativeInput(props: Props) {
     }
   });
 
-  // Sync server content to local (when others edit)
+  // Sync server content to local when others edit (side effect - DOM update)
   createEffect(() => {
     const doc = document();
     if (doc && initialized() && textareaRef) {
@@ -65,7 +69,7 @@ export function TrueCollaborativeInput(props: Props) {
         const oldLength = currentContent.length;
         const newLength = serverContent.length;
         
-        // Update the textarea value directly
+        // Update the textarea value directly (uncontrolled pattern)
         textareaRef.value = serverContent;
         lastKnownContent = serverContent;
 
@@ -79,11 +83,12 @@ export function TrueCollaborativeInput(props: Props) {
     }
   });
 
+  // Cleanup timer on unmount
   onCleanup(() => {
     if (sendContentTimer) clearTimeout(sendContentTimer);
   });
 
-  // Update content on server - DEBOUNCED, waits for user to pause typing
+  // Sync content to server - debounced to batch keystrokes
   const syncContent = (content: string) => {
     if (zero().userID === "anon") return;
 
@@ -98,26 +103,20 @@ export function TrueCollaborativeInput(props: Props) {
         mutators.sharedDocument.updateContent({
           documentId: props.documentId,
           content,
-          cursorPosition: 0, // Not used anymore
+          cursorPosition: 0,
         })
       );
     }, SEND_DEBOUNCE_MS) as unknown as number;
   };
 
-  // Handle input - uncontrolled, only syncs content (debounced)
+  // Handle input - uncontrolled pattern, no value binding
   const handleInput = (e: InputEvent) => {
     const target = e.target as HTMLTextAreaElement;
     const newContent = target.value;
 
-    // Update tracking and sync
     lastKnownContent = newContent;
     syncContent(newContent);
   };
-
-  // Get current user name
-  const currentUserName = createMemo(() => {
-    return users().find((u) => u.id === zero().userID)?.name || "Anonymous";
-  });
 
   return (
     <div class="true-collab-container">
